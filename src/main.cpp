@@ -153,7 +153,7 @@ int main1(void)
     int qtt_mov;
     cin >> qtt_mov;
 
-    char movs[qtt_mov];
+    char* movs = (char*) malloc(sizeof(char) * qtt_mov);
     for (int i = 0; i < qtt_mov; i++)
     {
         cin >> movs[i];
