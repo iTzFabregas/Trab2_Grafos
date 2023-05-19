@@ -40,5 +40,6 @@ private:
 	void move_ghost();
 	bool move_pacman();
 	void calc_bfs();
+	bool dont_bfs;
 	std::vector<struct pos> find_neighbors(const struct pos& curr) const;
 };

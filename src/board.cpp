@@ -33,16 +33,20 @@ struct board board::from_stream(std::istream &stream) {
 	struct board result;
 
 	size_t n;
+	result.dont_bfs = false;
 
 	stream >> n;
 
 	result.map.reserve(n);
+	result.bfs_map.reserve(n);
 	for (size_t y = 0; y < n; y++) {
 		result.map.push_back(std::vector<enum pos_state>());
+		result.bfs_map.push_back(std::vector<int>());
 		for (size_t x = 0; x < n; x++) {
 			int state;
 			stream >> state;
 			result.map[y].push_back(state ? WALL : PATH);
+			result.bfs_map[y].push_back(-1);
 		}
 	}
 
@@ -252,15 +256,10 @@ std::vector<struct pos> board::find_neighbors(const struct pos& curr) const {
 }
 
 void board::calc_bfs() {
-	if(!bfs_map.empty() && ghost_moves.empty())
+	if(dont_bfs)
 		return;
-	bfs_map.reserve(map.size());
-	for (size_t y = 0; y < map.size(); y++) {
-		bfs_map.push_back(std::vector<int>());
-		for (size_t x = 0; x < map.size(); x++) {
-			bfs_map[y].push_back(-1);
-		}
-	}
+	if(!bfs_map.empty() && ghost_moves.empty())
+		dont_bfs = true;
 
 	std::vector<struct pos> visited; 
 	std::queue<struct pos> queue;
