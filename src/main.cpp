@@ -1,8 +1,10 @@
+#include <cstdlib>
 #include <iostream>
 #include <fstream>
 #include <queue>
 #include <vector>
 #include <cstring>
+#include "board.hpp"
 
 using namespace std;
 
@@ -122,7 +124,12 @@ void BFS(int pacman_x, int pacman_y)
     }
 }
 
-int main(void)
+int main() {
+	struct board board = board::from_stream(std::cin);
+	board.run();
+}
+
+int main1(void)
 {
 
     // int tam;
@@ -279,4 +286,5 @@ int main(void)
     {
         cout << "Não foi possível achar um caminho" << endl;
     }
+	return 0;
 }
