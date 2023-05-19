@@ -1,10 +1,10 @@
-CC=g++					# C compiler
-CFLAGS=-I. -g -Wall
-DEPS= lib/*.h	
+CC = g++
+CFLAGS = -g -Wextra -pedantic -Wall
 OBJ = src/*.cpp
+DEPS = src/*.h
 
 all: $(OBJ)
-	@$(CC) -o prog $^ $(CFLAGS) $(LIBS)
+	@$(CC) -o prog $^ $(CFLAGS)
 
 o: $(OBJ) $(DEPS)
 	@$(CC) -c -o $@ $< $(CFLAGS)
@@ -16,4 +16,4 @@ clean:
 	@rm -f *.o prog *.zip
 
 zip:
-	zip trab2.zip Makefile ./src/*.cpp ./lib/*.hpp
+	zip trab2.zip Makefile ./src/*.cpp ./src/*.hpp
