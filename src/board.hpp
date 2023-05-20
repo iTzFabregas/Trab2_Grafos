@@ -24,7 +24,11 @@ struct board {
 public:
 
 	static struct board from_stream(std::istream& stream);
+#ifdef DEBUG
 	void print_state() const;
+#else
+	void print_state() const { return ;};
+#endif
 
 	void run();
 

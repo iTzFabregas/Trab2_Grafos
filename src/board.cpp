@@ -5,6 +5,8 @@
 #include <queue>
 #include <vector>
 #include <algorithm>
+#include <memory>
+#include <cstring>
 
 std::string direction2string(enum direction dir) {
 		std::string res;
@@ -78,6 +80,8 @@ struct board board::from_stream(std::istream &stream) {
 		default:
 			continue;
 		}
+		if(stream.eof())
+			break;
 		result.ghost_moves.push_back(move);
 	}
 	return result;
@@ -143,9 +147,9 @@ enum direction pos2direction(struct pos pos) {
 	return INVALID;
 }
 
+#ifdef DEBUG
 void board::print_state() const {
 	std::cout << "board:\n";
-
 	for (size_t y = 0; y < map.size(); y++) {
 		for (size_t x = 0; x < map[y].size(); x++) {
 			struct pos pos = {(int)x,(int)y};
@@ -154,7 +158,7 @@ void board::print_state() const {
 				std::cout << "@" << " ";
 				continue;
 			}
-				
+
 			if(pos == ghost_pos) {
 				std::cout << "G" << " ";
 				continue;
@@ -170,6 +174,18 @@ void board::print_state() const {
 		std::cout << "\n";
 	}
 
+	std::cout << "bfs map:\n";
+	for(auto line : bfs_map) {
+		for(auto bfs_value : line) {
+			if(bfs_value == -1) {
+				std::cout << "*" << " ";
+				continue;
+			}
+			std::cout << bfs_value << " ";
+		}
+		std::cout << "\n";
+	}
+
 	std::cout << "pacman pos:\n";
 	std::cout << "x: " << pacman_pos.x << " y: " << pacman_pos.y << "\n";
 	std::cout << "pacman moves:\n";
@@ -177,7 +193,6 @@ void board::print_state() const {
 		std::cout << direction2string(move) << " ";
 	}
 	std::cout << "\n";
-
 	std::cout << "ghost pos:\n";
 	std::cout << "x: " << ghost_pos.x << " y: " << ghost_pos.y << "\n";
 	std::cout << "ghost moves:\n";
@@ -187,31 +202,29 @@ void board::print_state() const {
 	std::cout << "\n";
 	std::cout << "--------------------------------\n";
 }
+#endif // DEBUG
 
 
 void board::run() {
-#ifdef DEBUG
 	print_state();
-#endif // DEBUG
+
 	while(pacman_pos != ghost_pos) {
-		move_ghost();
-		if(!move_pacman() || (ghost_moves.empty() && map[ghost_pos.y][ghost_pos.x] == WALL)){
+		if((ghost_moves.empty() && map[ghost_pos.y][ghost_pos.x] == WALL) || !move_pacman() ){
 			std::cout << "Não foi possível achar um caminho\n";
-#ifdef DEBUG
 			print_state();
-#endif // DEBUG
 			return;
 		}
-#ifdef DEBUG
+		if(pacman_pos == ghost_pos)
+			break;
+		move_ghost();
 		print_state();
-#endif // DEBUG
 	}
+
 	std::cout << "Número de passos: "  << pacman_moves.size() << "\n";
 	std::cout << "Movimentos para cima: " << std::count(std::begin(pacman_moves), std::end(pacman_moves), UP) << "\n";
 	std::cout << "Movimentos para baixo: " << std::count(std::begin(pacman_moves), std::end(pacman_moves), DOWN) << "\n";
 	std::cout << "Movimentos para esquerda: " << std::count(std::begin(pacman_moves), std::end(pacman_moves), LEFT) << "\n";
 	std::cout << "Movimentos para direita: " << std::count(std::begin(pacman_moves), std::end(pacman_moves), RIGHT) << "\n";
-
 }
 
 void board::correct_pos(struct pos& p) {
@@ -261,52 +274,46 @@ void board::calc_bfs() {
 	if(!bfs_map.empty() && ghost_moves.empty())
 		dont_bfs = true;
 
-	std::vector<struct pos> visited; 
+	auto visited = std::make_unique<char[]>(map.size() * map.size());
+	std::memset(visited.get(), 0, map.size() * map.size());
 	std::queue<struct pos> queue;
 
 	queue.push(ghost_pos);
-	visited.push_back(ghost_pos);
+	visited[ghost_pos.y * map.size() + ghost_pos.x] = 1;
 	bfs_map[ghost_pos.y][ghost_pos.x] = 0;
 
 	while (!queue.empty()) {
 		struct pos current = queue.front();
 		queue.pop();
+
 		for (auto& neighbor : find_neighbors(current)) {
 			if(map[neighbor.y][neighbor.x] == WALL)
 				continue;
-			if(std::count(std::begin(visited),std::end(visited), neighbor))
+			if(visited[neighbor.y * map.size() + neighbor.x] == 1)
 				continue;
 
-			visited.push_back(neighbor);
+			visited[neighbor.y * map.size() + neighbor.x] = 1;
 			queue.push(neighbor);
 			bfs_map[neighbor.y][neighbor.x] = bfs_map[current.y][current.x] + 1;
 		}
 	}
 }
 
-
 bool board::move_pacman() {
+	if(map[ghost_pos.y][ghost_pos.x] == WALL)
+		return true;
+
 	if(pacman_pos == ghost_pos)
 		return true;
-	calc_bfs();
 
-#ifdef DEBUG
-	std::cout << "bfs map:\n";
-	for(auto line : bfs_map) {
-		for(auto bfs_value : line) {
-			if(bfs_value == -1) {
-				std::cout << "*" << " ";
-				continue;
-			}
-			std::cout << bfs_value << " ";
-		}
-		std::cout << "\n";
-	}
-#endif // DEBUG
+	calc_bfs();
 
 	if(ghost_moves.empty() && bfs_map[pacman_pos.y][pacman_pos.x] == -1){
 		return false;
 	}
+
+	if(bfs_map[pacman_pos.y][pacman_pos.x] == -1)
+		return true;
 
 	auto neighbors = find_neighbors(pacman_pos);
 	std::vector<int> distances;
