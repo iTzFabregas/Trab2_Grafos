@@ -1,19 +1,47 @@
+BIN = prog
+
+SRCS = $(shell ls src/*.cpp)
+
+########################################################
+
+# Config flags
 CC = g++
-CFLAGS = -g -Wextra -pedantic -Wall
-OBJ = src/*.cpp
-DEPS = src/*.h
+C_FLAGS = -Wall -Wextra -Wpedantic -ggdb
 
-all: $(OBJ)
-	@$(CC) -o prog $^ $(CFLAGS)
+C_FLAGS += $(CFLAGS)
+CPP_FLAGS += $(CPPFLAGS)
+LD_FLAGS += $(LDFLAGS)
 
-o: $(OBJ) $(DEPS)
-	@$(CC) -c -o $@ $< $(CFLAGS)
+# Binarie-object dependencies
+$(BIN) : $(SRCS:%.cpp=%.o)
+	$(CC) $(LD_FLAGS) $^ -o $@
 
-run:
-	@./prog $${SIZE} $${QTT};
+# Object-source dependencies
+%.o : %.cpp
+	$(CC) $(C_FLAGS) $(CPP_FLAGS) -c $< -o $@
+
+# Object-header dependencies
+deps = $(SRCS:%.cpp=%.d)
+-include $(deps)
+
+%.d : %.cpp
+	$(CC) $(C_FLAGS) -MM -MT '$(<:%.cpp=%.o) $@' $< -o $@
+
+.PHONY: all clean zip
+
+all : $(BIN)
+
+run: all
+	@./$(BIN)
+
+test:
+	@run-cli test
+
+zip: clean
+	zip -r submission src/ Makefile
 
 clean:
-	@rm -f *.o prog *.zip
-
-zip:
-	zip trab2.zip Makefile ./src/*.cpp ./src/*.hpp
+	rm -f submission.zip
+	rm -f src/*.o
+	rm -f src/*.d
+	rm -f $(BIN)
