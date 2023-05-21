@@ -8,6 +8,13 @@
 #include <memory>
 #include <cstring>
 
+/**
+ * @brief  Função que pega uma direção do enum direction e 
+ * transforma em string
+ * 
+ * @param dir direção do enum direction
+ * @return std::string string relativa a direção entrada
+ */
 std::string direction2string(enum direction dir) {
 		std::string res;
 		switch (dir) {
@@ -113,6 +120,14 @@ struct pos operator+=(pos& a, const pos& b) {
 	return a = a + b;
 }
 
+/**
+ * @brief Função que pega uma direção do enum direction e 
+ * transforma em uma posição que ou somar, a nova posição
+ * será para a direção desejada
+ * 
+ * @param dir direção do enum
+ * @return struct pos posição para a direção desejada
+ */
 struct pos direction2pos(enum direction dir) {
 		struct pos res;
 		switch (dir) {
@@ -147,77 +162,19 @@ enum direction pos2direction(struct pos pos) {
 	return INVALID;
 }
 
-#ifdef DEBUG
-void board::print_state() const {
-	std::cout << "board:\n";
-	for (size_t y = 0; y < map.size(); y++) {
-		for (size_t x = 0; x < map[y].size(); x++) {
-			struct pos pos = {(int)x,(int)y};
-
-			if( pos == pacman_pos && pacman_pos == ghost_pos) {
-				std::cout << "@" << " ";
-				continue;
-			}
-
-			if(pos == ghost_pos) {
-				std::cout << "G" << " ";
-				continue;
-			}
-
-			if(pos == pacman_pos) {
-				std::cout << "P" << " ";
-				continue;
-			}
-
-			std::cout << map[y][x] << " ";
-		}
-		std::cout << "\n";
-	}
-
-	std::cout << "bfs map:\n";
-	for(auto line : bfs_map) {
-		for(auto bfs_value : line) {
-			if(bfs_value == -1) {
-				std::cout << "*" << " ";
-				continue;
-			}
-			std::cout << bfs_value << " ";
-		}
-		std::cout << "\n";
-	}
-
-	std::cout << "pacman pos:\n";
-	std::cout << "x: " << pacman_pos.x << " y: " << pacman_pos.y << "\n";
-	std::cout << "pacman moves:\n";
-	for (auto move : pacman_moves) {
-		std::cout << direction2string(move) << " ";
-	}
-	std::cout << "\n";
-	std::cout << "ghost pos:\n";
-	std::cout << "x: " << ghost_pos.x << " y: " << ghost_pos.y << "\n";
-	std::cout << "ghost moves:\n";
-	for (auto move : ghost_moves) {
-		std::cout << direction2string(move) << " ";
-	}
-	std::cout << "\n";
-	std::cout << "--------------------------------\n";
-}
-#endif // DEBUG
-
-
 void board::run() {
-	print_state();
-
 	while(pacman_pos != ghost_pos) {
+		
+		// IF QUE VERIFICA SE AINDA É POSSÍVEL DO PACMAN CHEGAR NO FANTASMA
 		if((ghost_moves.empty() && map[ghost_pos.y][ghost_pos.x] == WALL) || !move_pacman() ){
 			std::cout << "Não foi possível achar um caminho\n";
-			print_state();
 			return;
 		}
-		if(pacman_pos == ghost_pos)
-			break;
+
+		if(pacman_pos == ghost_pos) break;
+
 		move_ghost();
-		print_state();
+
 	}
 
 	std::cout << "Número de passos: "  << pacman_moves.size() << "\n";
@@ -256,6 +213,7 @@ std::vector<struct pos> board::find_neighbors(const struct pos& curr) const {
 		{0,1},
 	};
 
+	// for que pega todos os 4 vizinhos do curr mas só coloca no vetor os que estiverem dentro do mapa
 	for (auto& dir : neighbors_directions) {
 		auto neighbor = curr + dir;
 		if(neighbor.x >= (int)map.size() || neighbor.y >= (int)map.size() ||
@@ -300,6 +258,8 @@ void board::calc_bfs() {
 }
 
 bool board::move_pacman() {
+
+	// SE O FANTASMA ESTIVER DENTRO DA PAREDE, O PACMAN NAO SE MOVE
 	if(map[ghost_pos.y][ghost_pos.x] == WALL)
 		return true;
 
@@ -308,16 +268,20 @@ bool board::move_pacman() {
 
 	calc_bfs();
 
+	// SE O FANTASMA NAO TIVER MAIS MOVIMENTOS, E NÃO FOR POSSÍVEL CHEGAR NELE, NAO É POSSÍVEL CHEGAR
 	if(ghost_moves.empty() && bfs_map[pacman_pos.y][pacman_pos.x] == -1){
 		return false;
 	}
 
+	// SE NÃO FOR POSSÍVEL CHEGAR NO FANTASMA, MAS ELE AINDA TIVER MOVIMENTOS, CONTINUA
 	if(bfs_map[pacman_pos.y][pacman_pos.x] == -1)
 		return true;
+
 
 	auto neighbors = find_neighbors(pacman_pos);
 	std::vector<int> distances;
 
+	// REMOVE TODOS OS VIZINHOS QUE FOREM UMA PAREDE
 	neighbors.erase(std::remove_if(std::begin(neighbors), std::end(neighbors),
 								   [&](auto n){ return map[n.y][n.x] == WALL;}), std::end(neighbors));
 
@@ -328,6 +292,7 @@ bool board::move_pacman() {
 	if(distances.empty())
 		return true;
 
+	// MOVE O PACMAN PARA O VIZINHO QUE ESTIVER A UMA DISTANCIA MENOR AO FANTASMA
 	int min_dist = distances[0];
 	int min_dist_i = 0;
 	for (size_t i = 0; i < distances.size(); i++) {
