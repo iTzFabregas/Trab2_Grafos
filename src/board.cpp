@@ -9,9 +9,9 @@
 #include <cstring>
 
 /**
- * @brief  Função que pega uma direção do enum direction e 
+ * @brief  Função que pega uma direção do enum direction e
  * transforma em string
- * 
+ *
  * @param dir direção do enum direction
  * @return std::string string relativa a direção entrada
  */
@@ -59,11 +59,11 @@ struct board board::from_stream(std::istream &stream) {
 		}
 	}
 
-	std::cin >> result.pacman_pos.y;
-	std::cin >> result.pacman_pos.x;
+	stream >> result.pacman_pos.y;
+	stream >> result.pacman_pos.x;
 
-	std::cin >> result.ghost_pos.y;
-	std::cin >> result.ghost_pos.x;
+	stream >> result.ghost_pos.y;
+	stream >> result.ghost_pos.x;
 
 	stream >> n;
 
@@ -94,6 +94,11 @@ struct board board::from_stream(std::istream &stream) {
 	return result;
 }
 
+/**
+ * Sobrecarga de operadores para deixar as operações de envolvendo as posições do pacman e fanstama
+ * mais legíveis.
+ */
+
 pos operator+(const pos& a, const pos& b) {
 	return {
 		a.x + b.x,
@@ -121,10 +126,10 @@ struct pos operator+=(pos& a, const pos& b) {
 }
 
 /**
- * @brief Função que pega uma direção do enum direction e 
+ * @brief Função que pega uma direção do enum direction e
  * transforma em uma posição que ou somar, a nova posição
  * será para a direção desejada
- * 
+ *
  * @param dir direção do enum
  * @return struct pos posição para a direção desejada
  */
@@ -150,21 +155,28 @@ struct pos direction2pos(enum direction dir) {
 	return res;
 }
 
-enum direction pos2direction(struct pos pos) {
-	if(pos.x == 1 && pos.y == 0)
+/**
+ * @brief Função que pega uma variação na posição e
+ * transforma em um enum direction
+ *
+ * @param ds variação na posição
+ * @return enum direction direção do enum
+ */
+enum direction pos2direction(struct pos ds) {
+	if(ds.x == 1 && ds.y == 0)
 		return RIGHT;
-	if(pos.x == 0 && pos.y == 1)
+	if(ds.x == 0 && ds.y == 1)
 		return DOWN;
-	if(pos.x == -1 && pos.y == 0)
+	if(ds.x == -1 && ds.y == 0)
 		return LEFT;
-	if(pos.x == 0 && pos.y == -1)
+	if(ds.x == 0 && ds.y == -1)
 		return UP;
 	return INVALID;
 }
 
 void board::run() {
 	while(pacman_pos != ghost_pos) {
-		
+
 		// IF QUE VERIFICA SE AINDA É POSSÍVEL DO PACMAN CHEGAR NO FANTASMA
 		if((ghost_moves.empty() && map[ghost_pos.y][ghost_pos.x] == WALL) || !move_pacman() ){
 			std::cout << "Não foi possível achar um caminho\n";
@@ -213,7 +225,7 @@ std::vector<struct pos> board::find_neighbors(const struct pos& curr) const {
 		{0,1},
 	};
 
-	// for que pega todos os 4 vizinhos do curr mas só coloca no vetor os que estiverem dentro do mapa
+	// For que pega todos os 4 vizinhos do curr mas só coloca no vetor os que estiverem dentro do mapa
 	for (auto& dir : neighbors_directions) {
 		auto neighbor = curr + dir;
 		if(neighbor.x >= (int)map.size() || neighbor.y >= (int)map.size() ||
